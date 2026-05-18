@@ -60,7 +60,7 @@ We provide background on the systems and theirs scales and dependencies relevant
 
 <!-- : `[X1]`% matmul kernels, `[X2]`% attention kernels (the specific FlashAttention version selected by Transformer Engine at runtime will be verified from the trace and reported), `[X3]`% NCCL gradient reduction, `[X4]`% time outside CUDA kernels. We do not assert the bottleneck identity in advance: the diagnosis (compute-bound vs memory-bandwidth-bound vs kernel-launch-bound) is read off the trace once the profile job completes, with the supporting evidence cited (kernel occupancy, gaps between launches, NCCL-overlap behavior). -->
 >
-> **Headline baseline throughput**: `[X tok/s/GPU]` averaged over steps 20–49 (W&B run `[ID]`).
+> **b aseline throughput**: `[X tok/s/GPU]` averaged over steps 20–49 . TO DO 
 >
 > **5.2 — Single-knob ablations (Mischa).**
 >
@@ -90,13 +90,13 @@ We provide background on the systems and theirs scales and dependencies relevant
 
 ---
 
-### §6 — Multi-node MoE scaling
+### §6 — Multi-node MoE scaling (Roberto)
 
 > **6.1 — Why all-to-all matters.**
 >
 > Mixture-of-Experts (MoE) layers replace the dense feed-forward block with `N` parallel "experts" plus a router that sends each token to `top-k` of them. When experts are sharded across GPU ranks ("expert parallelism", EP > 1), each transformer layer dispatches tokens to their assigned experts via an all-to-all permutation, computes the experts, then gathers the results back via a second all-to-all. The bytes dispatched per layer per step scale roughly with `MBS × seq_len × hidden × top_k × bytes_per_elem`. On Alps Clariden the our `test-infra.sbatch` benchmark reports ~340 GB/s NCCL bus bandwidth intra-node (NVLink) and ~93 GB/s inter-node (Slingshot-11); thus once expert parallelism spans nodes, dispatch crosses an interconnect with roughly 3.6× lower effective bandwidth than the intra-node. We are not aware of a public characterization of MoE all-to-all overhead for this specific GH200 + Slingshot-11 combination and thus we decided to implement it.
 >
-> **6.2 — Sweep design.**
+> **6.2 — Sweep design (Sarah) **
 >
 > We ran a 14-cell sweep with a 760M-active backbone, MBS 4, BF16 base precision, and Megatron-LM's standard MoE recipe (softmax routing in FP32, auxiliary load-balance loss with coefficient 1e-2, router z-loss 1e-3, grouped GEMM, all-to-all dispatcher). Three axes vary:
 >
