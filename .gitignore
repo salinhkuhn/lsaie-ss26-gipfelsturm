@@ -1,3 +1,9 @@
 logs/
 data/climbmix_small/
 config.sh
+
+# Personal notes and local working files (do not push)
+course-project/report-vision-notes.md
+course-project/throughput-experiments.md
+course-project/experiments/
+course-project/wandb_exports/
