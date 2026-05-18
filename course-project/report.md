@@ -19,13 +19,13 @@ Gipfelsturm: From Megatron Defaults to a Throughput–Loss Frontier on Alps
 >
 > Third, we conduct an empirical scaling runs characterizing MoE all-to-all-related throughput on Slingshot-11. The runs span a subset of `(nodes ∈ {1,2,4,8}) × (EP ∈ {1,4,8}) × (top-k ∈ {1,2,4}) × (num_experts ∈ {8,16,32,64})` plus one FP8-expert control point. We use W&B-logged per-step throughput as the primary measurement and derive a scaling efficiency curve.
 
-> Combining all three, we produce a **Pareto frontier on the (throughput, eval-loss) plane** characterizing  how the standard Megatron-LM knobs combine and identify which operating point dominates which course-defined budget and present an actionable map for picking among them under each of the course's two challenges.
+> Combining all three, we produce a Pareto frontier on the (throughput, eval-loss) plane characterizing  how the standard Megatron-LM knobs combine and identify which operating point dominates which course-defined budget and present an actionable map for picking among them under each of the course's two challenges.
 
 ---
 
 ## §3 — Background 
 
-We provide background on the systems and theirs scales and dependencies relevant to this report.
+We provide background on the systems and their scales and dependencies relevant to this report.
 
 > **3.1 — Hardware: Grace-Hopper GH200 and Slingshot-11.**  Each Alps Clariden node hosts four GH200 superchips connected by NVLink. Each superchip pairs a Grace ARM CPU with a Hopper H200 GPU via NVLink, giving the GPU near-DRAM access to the CPU's. Inter-node communication uses Slingshot-11 and large NCCL bus bandwidth intra-node than inter-node.
 >
@@ -104,8 +104,6 @@ We provide background on the systems and theirs scales and dependencies relevant
 > - **Top-k** (2 cells): `top-k ∈ {1, 4}` at `nodes=8, EP=8, num_experts=8`. Companion to cell 8's top-k=2. Tests linear scaling of all-to-all traffic with k.
 > - **Expert count** (3 cells): `num_experts ∈ {16, 32, 64}` at `nodes=8, EP=8, top-k=2`. Companion to cell 8's `num_experts=8`. Note that since `--moe-ffn-hidden-size` defaults to the dense FFN width when unset (Megatron `arguments.py:1016`), all experts in our sweep are full-width; increasing `num_experts` therefore increases *total* parameters (and per-EP-rank parameters) but keeps active compute per token constant. This is a different setup than DeepSeekMoE's recipe, which shrinks expert width when increasing expert count to keep active *and* total parameters comparable. We do *not* directly test the DeepSeekMoE claim with this slice; we only characterize how all-to-all overhead and grouped-GEMM throughput change with expert count at fixed top-k.
 > - **Precision control** (1 cell): cell 8 setup with FP8 experts. The matmul inside each expert uses FP8 (1 byte per element vs 2 for BF16). Whether the dispatched-token-bytes are correspondingly halved depends on which precision the dispatch operates in inside Megatron-LM's `alltoall` token dispatcher; we will verify this from the trace rather than assume it.
->
-> Each cell is one SLURM submission via `launch_moe_sweep.sh` and the full sweep is driven by `moe_sweep_driver.sh` whcih is a driver script.
 >
 > **6.3 — Scaling efficiency.**
 >
